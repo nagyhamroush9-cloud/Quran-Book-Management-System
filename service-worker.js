@@ -1,4 +1,4 @@
-const CACHE_NAME = "quran-book-shell-v1.5.3";
+const CACHE_NAME = "quran-book-shell-v1.5.6";
 
 const APP_SHELL = [
   "./",

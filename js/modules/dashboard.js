@@ -95,7 +95,10 @@ async function paintDashboard(root, state) {
         onclick: () => openStudentFormModal({ studentId: row.student.id, onSaved: reload }),
       }, icon("edit", { size: 16 })),
       el("button", {
-        type: "button", className: "icon-btn", "aria-label": "تسجيل دفعة", title: "تسجيل دفعة",
+        type: "button",
+        className: "icon-btn",
+        "aria-label": `تسجيل دفعة لـ ${row.student.fullName}`,
+        title: "تسجيل دفعة",
         onclick: () => openPaymentModal({ studentId: row.student.id, period, onSaved: reload }),
       }, icon("cash", { size: 16 }))
     );

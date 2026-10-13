@@ -53,11 +53,6 @@ export async function renderPayments(root, ctx) {
 }
 
 async function renderPaymentForm(root, ctx) {
-  await openPaymentModal({
-    studentId: ctx.query?.student || "",
-    period: ctx.query?.period,
-    onSaved: () => navigate("#/payments"),
-  });
   const [students, invoices] = await Promise.all([studentsRepo.all(), invoicesRepo.all()]);
   const pre = ctx.query?.student || "";
   let submitting = false;
@@ -99,6 +94,7 @@ async function renderPaymentForm(root, ctx) {
     const data = formData(form);
     const parsed = parsePoundsToPiastres(data.amount);
     if (!parsed.ok) { toast(parsed.error, "error"); return; }
+    if (parsed.piastres <= 0n) { toast("مبلغ الدفعة يجب أن يكون أكبر من صفر.", "error"); return; }
     const ok = await confirmDialog({
       title: "تأكيد الدفعة",
       message: `تسجيل ${formatPiastres(parsed.piastres)} للطالب المختار؟ لا يُعتبر التحصيل مكتملًا إلا بعد نجاح الحفظ.`,

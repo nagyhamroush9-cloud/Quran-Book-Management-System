@@ -273,6 +273,13 @@ export async function recordMonthPayment(input) {
   if (!periods.length) {
     throw Object.assign(new Error("no periods"), { userMessage: "اختر شهرًا واحدًا على الأقل." });
   }
+  const amount = BigInt(input.amountPiastres);
+  if (amount <= 0n) {
+    throw Object.assign(new Error("amount"), { userMessage: "مبلغ الدفعة يجب أن يكون أكبر من صفر." });
+  }
+  if (!await studentsRepo.get(input.studentId)) {
+    throw Object.assign(new Error("missing student"), { userMessage: "الطالب غير موجود." });
+  }
   const settings = await loadSettings();
   const invoices = [];
   for (const period of periods) {
@@ -282,7 +289,6 @@ export async function recordMonthPayment(input) {
       settings,
     }));
   }
-  const amount = BigInt(input.amountPiastres);
   const { allocations } = allocatePayment(invoices, amount);
   return recordPayment({
     studentId: input.studentId,
@@ -360,6 +366,9 @@ export async function cancelInvoice(id, reason) {
 }
 
 export async function recordPayment(input) {
+  if (!await studentsRepo.get(input.studentId)) {
+    throw Object.assign(new Error("missing student"), { userMessage: "الطالب غير موجود." });
+  }
   if (input.idempotencyKey) {
     const existing = await paymentsRepo.byIndex("idempotencyKey", input.idempotencyKey);
     if (existing.length) {

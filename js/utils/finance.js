@@ -250,7 +250,13 @@ export function monthPaymentState(invoice, today = todayLocal()) {
   if (!invoice) return { key: "none", label: "لا مستحق", badge: "badge-muted" };
   const status = deriveInvoiceStatus(invoice, today);
   if (status === "paid") return { key: "paid", label: "خالص", badge: "badge-paid" };
-  if (status === "partial") return { key: "partial", label: "جزئي", badge: "badge-partial" };
+  if (BigInt(invoice.amountPaidPiastres ?? 0) > 0n && BigInt(invoice.outstandingPiastres ?? 0) > 0n) {
+    return {
+      key: "partial",
+      label: status === "overdue" ? "دفع جزءًا · متأخر" : "دفع جزءًا",
+      badge: "badge-partial",
+    };
+  }
   if (status === "overdue") return { key: "owed", label: "عليه فلوس", badge: "badge-owed" };
   return { key: "unpaid", label: "عليه فلوس", badge: "badge-owed" };
 }

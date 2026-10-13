@@ -103,6 +103,18 @@ export async function openPaymentModal({ studentId = "", period = currentPeriod(
     return studentFeePiastres(student, group, plan);
   };
 
+  const expectedFor = (student, periods = selectedPeriods) => [...periods].reduce((sum, p) => {
+    const inv = activeInvoiceForPeriod(invoices, student.id, p);
+    return sum + (inv ? BigInt(inv.outstandingPiastres || 0) : feeOf(student));
+  }, 0n);
+
+  const fillFullAmount = (student) => {
+    const expected = expectedFor(student);
+    if (expected <= 0n) return false;
+    amountInput.value = formatPiastres(expected, { withCurrency: false, locale: "en-US", trimZeros: true });
+    return true;
+  };
+
   const refreshMonths = () => {
     const student = students.find((s) => s.id === selectedId);
     const around = surroundingPeriods(period, 4, 3);
@@ -143,7 +155,6 @@ export async function openPaymentModal({ studentId = "", period = currentPeriod(
       expected += due;
       return `${periodLabel(p)}: ${formatMoney(due)}`;
     });
-    if (!amountInput.value) amountInput.value = formatPiastres(expected, { withCurrency: false, locale: "en-US", trimZeros: true });
     const parsed = parsePoundsToPiastres(amountInput.value);
     const received = parsed.ok ? parsed.piastres : 0n;
     const remain = expected - received;
@@ -166,16 +177,28 @@ export async function openPaymentModal({ studentId = "", period = currentPeriod(
       const btn = el("button", { type: "button" }, `${s.fullName} — ${s.guardianPhone || "بدون رقم"}`);
       btn.addEventListener("click", () => {
         selectedId = s.id;
+        selectedPeriods = new Set([period].filter(Boolean));
         studentSearch.value = s.fullName;
         suggest.classList.add("hidden");
-        amountInput.value = "";
         refreshMonths();
+        amountInput.value = "";
+        fillFullAmount(s);
         refreshPreview();
       });
       return btn;
     }));
   };
-  studentSearch.addEventListener("input", paintSuggest);
+  studentSearch.addEventListener("input", () => {
+    const selectedStudent = students.find((s) => s.id === selectedId);
+    if (selectedStudent && studentSearch.value.trim() !== selectedStudent.fullName) {
+      selectedId = "";
+      selectedPeriods = new Set([period].filter(Boolean));
+      amountInput.value = "";
+      refreshMonths();
+      refreshPreview();
+    }
+    paintSuggest();
+  });
   amountInput.addEventListener("input", refreshPreview);
 
   const form = el("div", { className: "stack" },
@@ -192,28 +215,25 @@ export async function openPaymentModal({ studentId = "", period = currentPeriod(
     el("p", { className: "muted" }, "إذا كان المبلغ لا يغطي الشهور المختارة سيُسجَّل جزء منها فقط. الزيادة تُحفظ كرصيد ولا تُضاف لشهر آخر تلقائيًا."),
     el("div", { className: "modal-actions" },
       el("button", { type: "button", className: "btn btn-ghost", onclick: closeModal }, "إلغاء"),
-      el("button", { type: "button", className: "btn", id: "pay-full" }, "تم الدفع"),
-      el("button", { type: "button", className: "btn", id: "pay-save" }, "حفظ")
+      el("button", { type: "button", className: "btn btn-ghost", id: "pay-full" }, "ملء كامل المستحق"),
+      el("button", { type: "button", className: "btn", id: "pay-save" }, "حفظ المبلغ المدخل")
     )
   );
 
-  const submit = async (full) => {
+  const submit = async () => {
     if (submitting) return;
     const student = students.find((s) => s.id === selectedId);
     if (!student) { toast("اختر الطالب.", "error"); return; }
     const periods = [...selectedPeriods].sort();
     if (!periods.length) { toast("اختر شهرًا.", "error"); return; }
-    if (full) {
-      let expected = 0n;
-      for (const p of periods) {
-        const inv = activeInvoiceForPeriod(invoices, student.id, p);
-        expected += inv ? BigInt(inv.outstandingPiastres || 0) : feeOf(student);
-      }
-      if (expected <= 0n) { toast("لا يوجد مبلغ متبقٍ على الشهور المختارة.", "error"); return; }
-      amountInput.value = formatPiastres(expected, { withCurrency: false, locale: "en-US", trimZeros: true });
-    }
     const parsed = parsePoundsToPiastres(amountInput.value);
     if (!parsed.ok) { toast(parsed.error, "error"); return; }
+    if (parsed.piastres <= 0n) { toast("مبلغ الدفعة يجب أن يكون أكبر من صفر.", "error"); return; }
+    const expected = periods.reduce((sum, p) => {
+      const inv = activeInvoiceForPeriod(invoices, student.id, p);
+      return sum + (inv ? BigInt(inv.outstandingPiastres || 0) : feeOf(student));
+    }, 0n);
+    if (expected <= 0n) { toast("لا يوجد مبلغ متبقٍ على الشهور المختارة.", "error"); return; }
     const ok = await confirmDialog({
       title: "تأكيد التسجيل",
       message: `حفظ ${formatMoney(parsed.piastres)} لـ ${student.fullName} عن ${periods.map(periodLabel).join("، ")}؟`,
@@ -243,11 +263,19 @@ export async function openPaymentModal({ studentId = "", period = currentPeriod(
     }
   };
 
-  form.querySelector("#pay-full").addEventListener("click", () => submit(true));
-  form.querySelector("#pay-save").addEventListener("click", () => submit(false));
+  form.querySelector("#pay-full").addEventListener("click", () => {
+    const student = students.find((s) => s.id === selectedId);
+    if (!student) { toast("اختر الطالب أولًا.", "error"); return; }
+    if (!fillFullAmount(student)) { toast("لا يوجد مبلغ متبقٍ على الشهور المختارة.", "error"); return; }
+    refreshPreview();
+    amountInput.focus();
+  });
+  form.querySelector("#pay-save").addEventListener("click", submit);
 
   modalRoot().replaceChildren(overlay(form));
   refreshMonths();
+  const initialStudent = students.find((s) => s.id === selectedId);
+  if (initialStudent) fillFullAmount(initialStudent);
   refreshPreview();
 }
 
