@@ -1,0 +1,18 @@
+@media print {
+  .sidebar, .topbar, .bottom-nav, .toolbar, .menu-toggle, .no-print, .toast-host, .offline-banner, .pager {
+    display: none !important;
+  }
+  body, .content, .card, table { background: #fff !important; box-shadow: none !important; }
+  .app-shell { display: block; }
+  .main-wrap { display: block; }
+  a { color: inherit; text-decoration: none; }
+  .receipt {
+    max-width: 720px;
+    margin: 0 auto;
+    border: 1px solid #ccc;
+    padding: 24px;
+  }
+}
+.receipt h1 { font-size: 1.3rem; margin: 0 0 8px; }
+.receipt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sign-line { margin-top: 48px; border-top: 1px solid #999; width: 220px; padding-top: 6px; }

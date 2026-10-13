@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">منصّة الشيخ خليل</title>
+  <desc id="desc">علامة منصّة الشيخ خليل التعليمية</desc>
+  <rect width="512" height="512" rx="104" fill="#134437"/>
+  <path d="M148 112h170c42 0 76 34 76 76v212H208c-33 0-60-27-60-60V112Z" fill="#fffdf8"/>
+  <path d="M164 112h166c35 0 64 29 64 64v176H222c-32 0-58-26-58-58V112Z" fill="#e7f3ee"/>
+  <path d="M206 154h126c14 0 26 12 26 26v128H222c-9 0-16-7-16-16V154Z" fill="#fffdf8"/>
+  <path d="M218 196h110M218 236h110M218 276h82" stroke="#1b5e4a" stroke-width="18" stroke-linecap="round"/>
+  <path d="M146 112c-22 0-40 18-40 40v188c0 33 27 60 60 60h42c-33 0-60-27-60-60V112h-2Z" fill="#b0892e"/>
+  <circle cx="146" cy="152" r="16" fill="#fffdf8"/>
+</svg>
